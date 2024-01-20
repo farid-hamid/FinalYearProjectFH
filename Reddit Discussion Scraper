@@ -1,0 +1,108 @@
+import praw
+import pandas as pd
+import datetime
+import nltk
+import openpyxl as xl
+nltk.download('vader_lexicon')
+nltk.download('stopwords')
+nltk.download('punkt')
+import re
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+
+
+#API auth
+user_agent = "SentTest02"
+reddit = praw.Reddit(client_id="BCPsa0BrnyiG5tzuXwY5Qw",client_secret="WsEi_h1g_UXSJohItP7RaIe2l1WZ5g",user_agent=user_agent)
+subreddit = reddit.subreddit("FreestyleLibre")
+
+#collection of top comment replies and respective posts
+def get_comment_replies(comment, max_replies=4):
+    replies = []
+    for reply in comment.replies:
+        if not isinstance(reply, str):
+            replies.append(reply.body)
+            if len(replies) >= max_replies:
+                break
+    return replies
+
+def get_all_posts(subreddit, keywords, start_date, end_date):
+    posts = []
+
+    for submission in reddit.subreddit(subreddit).search(' '.join(keywords), time_filter='all'):
+        if start_date <= submission.created_utc <= end_date:
+            top_comment = submission.comments[0]
+            top_comment_replies = get_comment_replies(top_comment)
+            
+            post = {
+                'created_utc': submission.created_utc,
+                'title': submission.title,
+                'body': submission.selftext,
+                'top_comment': top_comment.body,
+                'top_comment_replies': top_comment_replies
+            }
+            posts.append(post)
+
+    return posts
+
+#KEYWORD AND DATE RANGE CONFIG
+start_date = datetime.datetime(2024, 1, 15,0,0,0).timestamp()
+end_date = datetime.datetime(2024, 1, 19,0,0,0).timestamp()
+posts_between_dates = get_all_posts('FreestyleLibre', ['accuracy'], start_date, end_date)
+
+#check if anything is collected
+print(f'Number of posts collected: {len(posts_between_dates)}')
+
+# Format the UTC timestamps to dd/mm/yyyy hh:mm
+def format_utc_timestamp(utc_timestamp):
+    dt = datetime.datetime.fromtimestamp(utc_timestamp)
+    excel_date_format = "%d/%m/%Y %H:%M"
+    excel_date_string = dt.strftime(excel_date_format)
+    return excel_date_string
+
+# Update the `df["created_utc"]` column to contain the formatted UTC timestamps
+for i in range(len(posts_between_dates)):
+    posts_between_dates[i]["created_utc"] = format_utc_timestamp(posts_between_dates[i]["created_utc"])
+
+# Create a Pandas DataFrame from the data
+df = pd.DataFrame(posts_between_dates)
+#data cleaning stage 1
+# df["body"] = df["body"].apply(lambda x: re.sub(r"[^\w\s]", "", x))
+# df["body"] = df["body"].apply(lambda x: " ".join([word for word in word_tokenize(x) if word not in stopwords.words("english")]))
+
+
+#saving to workbook
+data_storage = 'r-FreestyleLibre Data Collection.xlsx'
+wb = xl.load_workbook(data_storage)
+
+#Create a new sheet for each scrape
+sheet_name = 'Sheet {}'.format(len(wb.sheetnames) + 1)
+ws = wb.create_sheet(title=sheet_name)
+
+#Write to the new sheet
+for i, row in df.iterrows():
+    ws.cell(row=i + 2, column=1, value=row[0])
+    ws.cell(row=i + 2, column=2, value=row[1])
+    ws.cell(row=i + 2, column=3, value=row[2])
+    ws.cell(row=i + 2, column=4, value=row[3])
+
+    if row[4]:
+        # Check if row[4] is not empty (i.e., it's a non-empty list)
+        for j, reply in enumerate(row[4]):
+            if j < 5:
+                ws.cell(row=i + 2, column=5 + j, value=reply)
+
+    
+wb.save(data_storage)
+
+
+
+
+
+
+
+
+
+
+
+
