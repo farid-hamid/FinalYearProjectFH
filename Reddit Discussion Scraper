@@ -53,18 +53,18 @@ posts_between_dates = get_all_posts('FreestyleLibre', ['accuracy'], start_date, 
 #check if anything is collected
 print(f'Number of posts collected: {len(posts_between_dates)}')
 
-# Format the UTC timestamps to dd/mm/yyyy hh:mm
+#Format UTC timestamps to dd/mm/yyyy hh:mm
 def format_utc_timestamp(utc_timestamp):
     dt = datetime.datetime.fromtimestamp(utc_timestamp)
     excel_date_format = "%d/%m/%Y %H:%M"
     excel_date_string = dt.strftime(excel_date_format)
     return excel_date_string
 
-# Update the `df["created_utc"]` column to contain the formatted UTC timestamps
+#Update column to contain the formatted UTC timestamps
 for i in range(len(posts_between_dates)):
     posts_between_dates[i]["created_utc"] = format_utc_timestamp(posts_between_dates[i]["created_utc"])
 
-# Create a Pandas DataFrame from the data
+#Create a dataFrame 
 df = pd.DataFrame(posts_between_dates)
 #data cleaning stage 1
 # df["body"] = df["body"].apply(lambda x: re.sub(r"[^\w\s]", "", x))
@@ -79,7 +79,7 @@ wb = xl.load_workbook(data_storage)
 sheet_name = 'Sheet {}'.format(len(wb.sheetnames) + 1)
 ws = wb.create_sheet(title=sheet_name)
 
-#Write to the new sheet
+#Write to the new sheet to catalogue scraped data
 for i, row in df.iterrows():
     ws.cell(row=i + 2, column=1, value=row[0])
     ws.cell(row=i + 2, column=2, value=row[1])
