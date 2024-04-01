@@ -12,8 +12,8 @@ from nltk.corpus import stopwords
 
 
 #API auth
-user_agent = "SentTest02"
-reddit = praw.Reddit(client_id="BCPsa0BrnyiG5tzuXwY5Qw",client_secret="WsEi_h1g_UXSJohItP7RaIe2l1WZ5g",user_agent=user_agent)
+user_agent = " "
+reddit = praw.Reddit(client_id="CLIENT_ID",client_secret="CLIENT_SECRET",user_agent=user_agent)
 subreddit = reddit.subreddit("FreestyleLibre")
 
 #collection of top comment replies and respective posts
